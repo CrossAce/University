@@ -1,85 +1,53 @@
 #include<iostream>
+#include <afxdisp.h>
 #include<string>
-using namespace std;
 
+using std::cout;
+using std::string;
+using std::endl;
 
 enum Gender
 {
-	Male, Female, Trans
+	Undefined, Male, Female
 };
 
-struct CPerson
+class CPerson
 {
-	char name[20];
-	char sex[10];
-	CPerson(const char* name, const char* sex)
-	{
-		strcpy_s(this->name, name);
-		strcpy_s(this->sex, sex);
-	}
-	CPerson()
-	{
-		strcpy_s(this->name, "Vick");
-		strcpy_s(this->sex, "Male");
-	}
-	void SetName(const char* szName)
-	{
-		strcpy_s(this->name, szName);
-	}
-	void SetGender(const char* gender)
-	{
-		strcpy_s(this->sex, gender);
-	}
-	const char* GetName()
-	{
-		return this->name;
-	}
-	const char* GetGender()
-	{
-		return this->sex;
-	}
-};
+	COleDateTime birthDate;
 
-class CPerson_Class
-{
 	string name;
-	string sex;
+	Gender gender;
 	string egn = "";
 
-	string EnumToString(Gender gender)
-	{
-		switch (gender) {
-		case Male: return "Male"; break;
-		case Female: return  "Female"; break;
-		case Trans: return  "Trans"; break;
-		}
-	}
 	bool isValid(const string& egn)
 	{
 
-		if (egn.length() < 10) return false;
+		if (egn.length() < 10 || egn.length() > 10) return false;
 
-		int controlNumber = 0;
-		int weight[]{ 2,4,8,5,10,9,7,3,6 };
-		int temp[]{ 0,0,0,0,0,0,0,0,0};
-		int sum = 0;
+		bool result = checkAndBuildBirthDate(egn.substr(0, 6));
 
-		for (int i = 0; i < egn.length() - 1; i++) {
-			temp[i] = ctoi(egn[i])*weight[i];
+		if (result){
+
+			if (ctoi(egn[8]) % 2 != 0 && gender != Female) gender = Female;
+			if (ctoi(egn[8]) % 2 == 0 && gender != Male) gender = Male;
+
+			int controlNumber = 0;
+			int weight[]{ 2,4,8,5,10,9,7,3,6 };
+			int sum = 0;
+
+			for (int i = 0; i < egn.length() - 1; i++) {
+				int t = ctoi(egn[i])*weight[i];
+				sum += t;
+			}
+
+			int dev = sum % 11;
+
+			if (dev < 10)
+				controlNumber = dev;
+
+			if (ctoi(egn[9]) == controlNumber)
+				return true;
 		}
-
-		for (int i = 0; i < 9; i++){
-			sum += temp[i];
-		}
-
-		int dev = sum % 11;
-
-		if (dev < 10) 
-			controlNumber = dev;
-	
-		if (ctoi(egn[9]) == controlNumber)
-			return true;
-
 
 		return false;
 	}
@@ -87,19 +55,64 @@ class CPerson_Class
 	{
 		return (int) ch - 48;
 	}
+	bool checkAndBuildBirthDate(string egnDateSubString)
+	{
+		string year = egnDateSubString.substr(0, 2);
+		string month = egnDateSubString.substr(2, 2);
+		string day = egnDateSubString.substr(4, 2);
 
+		int y = atoi(year.c_str());
+		int m = atoi(month.c_str());
+		int d = atoi(day.c_str());
+
+		if (d < 1 || d > 31) return false;
+
+		if (m > 12) {
+			m = m - 20;
+			if (m > 12){
+				m = m - 20;
+
+				if (m > 12)
+					return false;
+
+				y += 2000;
+			}
+			else{
+				y += 1800;
+			}
+		}
+		else {
+			y += 1900;
+		}
+
+		COleDateTime now(COleDateTime::GetTickCount());
+		COleDateTime tbirthDate(y, m, d, 10, 10, 10);
+
+		if (now.m_status != now.invalid
+			&& tbirthDate.m_status != tbirthDate.invalid)
+		{
+			if (now < tbirthDate)
+				return false;
+
+		}
+		else
+			return false;
+
+
+		this->birthDate = tbirthDate;
+		return true;
+	}
 
 	public:
-
-	CPerson_Class(const string& name, Gender gender)
+	CPerson(const string& name, Gender gender)
 	{
 		this->name = name;
-		this->sex = EnumToString(gender);
+		this->gender = gender;
 	}
-	CPerson_Class()
+	CPerson()
 	{
 		this->name = "Unnamed";
-		this->sex = "";
+		this->gender = Undefined;
 		this->egn = "";
 	}
 	void SetName(const string& name)
@@ -108,7 +121,7 @@ class CPerson_Class
 	}
 	void SetGender(Gender gender)
 	{
-		this->sex = EnumToString(gender);
+		this->gender = gender;
 	}
 	bool SetEGN(const string& egn)
 	{
@@ -122,9 +135,9 @@ class CPerson_Class
 	{
 		return this->name;
 	}
-	string GetGender()
+	Gender GetGender()
 	{
-		return this->sex;
+		return this->gender;
 	}
 	string GetEGN()
 	{
@@ -133,25 +146,34 @@ class CPerson_Class
 
 		return this->egn;
 	}
-
+	string GenderToString(Gender gender)
+	{
+		switch (gender) {
+		case Male: return "Male";
+		case Female: return  "Female";
+		case Undefined: return "Undefined";
+		}
+	}
+	Gender stringToGender(const string& str)
+	{
+		if (str == "Male") return Male;
+		else if (str == "Female") return Female;
+		else return Undefined;
+	}
 };
 
 
 void main()
 {
+	CPerson per("Victor", Undefined);
 
-	CPerson_Class cl1("Vick", Male);
-	cout << "Egn -> " << cl1.GetEGN() << endl << endl;
-	if (!cl1.SetEGN("9702040961"))
-		cout << "Invalid eng!" << endl;
-	
-	CPerson_Class cl2;
-	
-	cout << cl1.GetName() << endl;
-	cout << cl1.GetGender() << endl;
-	cout << cl2.GetName() << endl;
-	cout << cl2.GetGender() << endl;
+	if (!per.SetEGN("9702040961")) {
+		cout << "Incorrect egn!" << endl;
+	}
+	cout << per.GenderToString(per.GetGender()) << endl;
+	cout << per.GetEGN() << endl;
+	cout << per.GetName() << endl;
+
 
 	system("pause");
-
 }
